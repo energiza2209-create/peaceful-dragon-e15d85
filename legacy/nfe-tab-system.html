@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Energiza CRM — NFe Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #09090B; color: #fff; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #27272A; border-radius: 99px; }
+
+    .dropzone { border: 2px dashed #27272A; background: #18181B; border-radius: 16px; transition: all .2s ease; cursor: pointer; }
+    .dropzone:hover, .dropzone.dragover { border-color: #EAB308; background: #1a1a0a; }
+
+    .tab-btn { transition: all .15s ease; }
+    .tab-btn.active { background: #EAB308; color: #09090B; font-weight: 700; }
+    .tab-btn:not(.active):hover { background: #27272A; }
+
+    .filter-pill { transition: all .15s ease; }
+    .filter-pill.active { background: #EAB308; color: #09090B; font-weight: 600; }
+    .filter-pill:not(.active):hover { background: #27272A; }
+
+    .btn-primary { background: #EAB308; color: #09090B; font-weight: 700; transition: all .15s ease; }
+    .btn-primary:hover { background: #FACC15; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(234,179,8,.25); }
+    .btn-secondary { background: #18181B; color: #A1A1AA; border: 1px solid #27272A; transition: all .15s ease; }
+    .btn-secondary:hover { background: #27272A; color: #fff; }
+
+    .card { background: #18181B; border: 1px solid #27272A; border-radius: 16px; }
+
+    .table-row { transition: all .12s ease; }
+    .table-row:hover { background: #1c1c1f; }
+    .table-row.selected { background: rgba(234,179,8,.06); border-left: 2px solid #EAB308; }
+
+    .badge-sync { background: rgba(34,197,94,.12); color: #22C55E; }
+    .badge-error { background: rgba(239,68,68,.12); color: #EF4444; }
+    .badge-pending { background: rgba(234,179,8,.12); color: #EAB308; }
+
+    .history-panel { animation: slideDown .25s ease forwards; overflow: hidden; }
+    @keyframes slideDown { from { max-height: 0; opacity: 0; } to { max-height: 400px; opacity: 1; } }
+
+    .fade-in { animation: fadeIn .3s ease forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+  const { useState, useEffect, useRef, useCallback } = React;
+
+  // ───── Icons (inline) ─────
+  const Icons = {
+    upload:   (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>),
+    search:   (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>),
+    plus:     (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>),
+    file:     (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>),
+    csv:      (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>),
+    eye:      (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>),
+    arrowUp:  (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>),
+    info:     (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>),
+    alert:    (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>),
+    check:    (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>),
+    sync:     (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>),
+    doc:      (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>),
+  };
+
+  // ───── Dados mock ─────
+  const MOCK_CLIENTES = [
+    { id:1, nome:"Hospital Santa Casa", cnpj:"12.345.678/0001-90", email:"adm@santacasa.com.br", tel:"(11) 3333-0100", ultimaVenda:"15/03/2025", total:18430 },
+    { id:2, nome:"Laboratório São Marcos", cnpj:"98.765.432/0001-10", email:"compras@saomarcos.com", tel:"(11) 4444-0200", ultimaVenda:"14/03/2025", total:9450 },
+    { id:3, nome:"Clínica Vida Plena", cnpj:"11.222.333/0001-55", email:"adm@vidaplena.com", tel:"(21) 5555-0300", ultimaVenda:"12/03/2025", total:5620 },
+    { id:4, nome:"Dental Center Odonto", cnpj:"44.555.666/0001-88", email:"contato@dentalcenter.com", tel:"(31) 6666-0400", ultimaVenda:"10/03/2025", total:12800 },
+    { id:5, nome:"Farmácia Saúde Total", cnpj:"77.888.999/0001-22", email:"admin@saudetotal.com", tel:"(41) 7777-0500", ultimaVenda:"08/03/2025", total:7200 },
+  ];
+
+  const MOCK_PRODUTOS = [
+    { id:1, nome:"Monitor Multiparâmetro", cod:"MON-001", ean:"7891234560010", nfOrigem:"452301-1", data:"15/03/2025", qtd:4, vUnit:850, status:"disponivel", mov:[{tipo:"Entrada",data:"15/03/2025",nf:"452301-1",qtd:4}] },
+    { id:2, nome:"Bomba de Infusão", cod:"BOM-005", ean:"7891234560027", nfOrigem:"452302-1", data:"14/03/2025", qtd:2, vUnit:680, status:"disponivel", mov:[{tipo:"Entrada",data:"14/03/2025",nf:"452302-1",qtd:2}] },
+    { id:3, nome:"Sensor SPO2 Adulto", cod:"SPO-003", ean:"7891234560034", nfOrigem:"452303-1", data:"12/03/2025", qtd:10, vUnit:32, status:"disponivel", mov:[{tipo:"Entrada",data:"12/03/2025",nf:"452303-1",qtd:10}] },
+    { id:4, nome:"Calibração Autoclave", cod:"CAL-002", ean:"7891234560041", nfOrigem:"452301-1", data:"15/03/2025", qtd:1, vUnit:1450, status:"disponivel", mov:[{tipo:"Entrada",data:"15/03/2025",nf:"452301-1",qtd:1}] },
+    { id:5, nome:"Eletrocardiógrafo 12 Canais", cod:"ECG-001", ean:"7891234560058", nfOrigem:"452304-1", data:"07/03/2025", qtd:1, vUnit:4200, status:"baixo_estoque", mov:[{tipo:"Entrada",data:"07/03/2025",nf:"452304-1",qtd:2},{tipo:"Saída",data:"10/03/2025",nf:"V-001",qtd:1}] },
+    { id:6, nome:"Gaze Hidrófila 8cm", cod:"GAZ-001", ean:"7891234560065", nfOrigem:"452305-1", data:"05/03/2025", qtd:0, vUnit:8.5, status:"sem_estoque", mov:[{tipo:"Entrada",data:"05/03/2025",nf:"452305-1",qtd:50},{tipo:"Saída",data:"06/03/2025",nf:"V-002",qtd:50}] },
+  ];
+
+  const MOCK_NFES = [
+    { id:1, chave:"4523.0115.2025.0001.0001.1234.5678.9012.3456.7890.1234", numero:"452301-1", emissor:"Hospital Santa Casa", data:"15/03/2025", status:"sincronizado", erro:null },
+    { id:2, chave:"4523.0214.2025.0001.0001.9876.5432.1098.7654.3210.9876", numero:"452302-1", emissor:"Laboratório São Marcos", data:"14/03/2025", status:"sincronizado", erro:null },
+    { id:3, chave:"4523.0312.2025.0001.0001.5678.1234.5678.1234.5678.1234", numero:"452303-1", emissor:"Clínica Vida Plena", data:"12/03/2025", status:"erro", erro:"CNPJ não cadastrado no sistema" },
+    { id:4, chave:"4523.0407.2025.0001.0001.4321.8765.4321.8765.4321.8765", numero:"452304-1", emissor:"Dental Center Odonto", data:"07/03/2025", status:"pendente", erro:null },
+    { id:5, chave:"4523.0505.2025.0001.0001.2468.1357.2468.1357.2468.1357", numero:"452305-1", emissor:"Farmácia Saúde Total", data:"05/03/2025", status:"erro", erro:"Alíquota ICMS ausente nos itens" },
+    { id:6, chave:"4523.0628.2025.0001.0001.1357.2468.1357.2468.1357.2468", numero:"452306-1", emissor:"Clínica Médica Nova Vida", data:"28/02/2025", status:"pendente", erro:null },
+  ];
+
+  // ───── Componentes ─────
+
+  function TopBar() {
+    return (
+      <header className="h-14 flex items-center justify-between px-6 lg:px-10 border-b border-[#27272A] bg-[#09090B] sticky top-0 z-50">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-[#EAB308] flex items-center justify-center text-black font-extrabold text-xs">E</div>
+          <div>
+            <h1 className="text-sm font-bold text-white leading-tight">Energiza CRM</h1>
+            <p className="text-[10px] text-[#A1A1AA] leading-tight">NFe Center</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] text-[#A1A1AA] hidden sm:flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E]"></span>
+            Conectado
+          </span>
+          <div className="w-7 h-7 rounded-full bg-[#27272A] flex items-center justify-center text-xs font-semibold text-[#A1A1AA]">AD</div>
+        </div>
+      </header>
+    );
+  }
+
+  function TabBar({ tabs, activeTab, setActiveTab }) {
+    return (
+      <div className="flex gap-1 bg-[#18181B] rounded-xl p-1 border border-[#27272A]">
+        {tabs.map(t => (
+          <button key={t.id}
+            onClick={() => setActiveTab(t.id)}
+            className={`tab-btn flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === t.id ? 'active' : 'text-[#A1A1AA]'
+            }`}
+          >
+            {t.icon}
+            {t.label}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  function SearchInput({ placeholder, value, onChange, className }) {
+    return (
+      <div className={`relative ${className || ''}`}>
+        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A1A1AA] pointer-events-none">{Icons.search}</span>
+        <input type="text" placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)}
+          className="w-full h-10 pl-10 pr-4 rounded-xl bg-[#09090B] border border-[#27272A] text-sm text-white placeholder:text-[#52525B] focus:outline-none focus:ring-2 focus:ring-[#EAB308]/30 focus:border-[#EAB308] transition-all" />
+      </div>
+    );
+  }
+
+  // ───── ABA 1: CLIENTES ─────
+  function TabClientes() {
+    const [busca, setBusca] = useState('');
+    const [filtro, setFiltro] = useState('todos');
+    const clientes = MOCK_CLIENTES.filter(c => {
+      const match = c.nome.toLowerCase().includes(busca.toLowerCase()) || c.cnpj.includes(busca);
+      return match;
+    });
+
+    const formatMoney = v => `R$ ${v.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+
+    return (
+      <div className="fade-in space-y-5">
+        {/* Cabeçalho */}
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h2 className="text-base font-bold text-white">Parceiros</h2>
+            <p className="text-xs text-[#A1A1AA]">Clientes e fornecedores cadastrados</p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button className="btn-secondary flex items-center gap-1.5 text-xs h-9 px-3.5 rounded-lg">{Icons.file} Importar NF-e</button>
+            <button className="btn-secondary flex items-center gap-1.5 text-xs h-9 px-3.5 rounded-lg">{Icons.csv} Importar CSV</button>
+            <button className="btn-primary flex items-center gap-1.5 text-xs h-9 px-4 rounded-lg">{Icons.plus} Novo Cliente</button>
+          </div>
+        </div>
+
+        {/* Filtros + Busca */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <SearchInput placeholder="Buscar por nome, CNPJ..." value={busca} onChange={setBusca} className="flex-1 w-full" />
+          <div className="flex gap-1.5 flex-wrap">
+            {['todos','clientes','fornecedores','historico_precos'].map(f => (
+              <button key={f} onClick={() => setFiltro(f)}
+                className={`filter-pill px-3.5 py-1.5 rounded-lg text-xs font-medium ${
+                  filtro === f ? 'active' : 'text-[#A1A1AA] bg-[#09090B] border border-[#27272A]'
+                }`}>
+                {f === 'todos' ? 'Todos' : f === 'clientes' ? 'Clientes' : f === 'fornecedores' ? 'Fornecedores' : 'Histórico de Preços'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tabela */}
+        <div className="card overflow-hidden">
+          <div className="hidden lg:grid grid-cols-[1.2fr_1fr_1fr_1fr_130px_130px] gap-3 px-5 py-3 bg-[#09090B] border-b border-[#27272A] text-[11px] font-semibold text-[#A1A1AA] uppercase tracking-wider">
+            <span>Nome Fantasia</span>
+            <span>CNPJ</span>
+            <span>Email</span>
+            <span>Telefone</span>
+            <span className="text-right">Última Venda</span>
+            <span className="text-right">Total Gasto</span>
+          </div>
+          <div className="divide-y divide-[#27272A]/60">
+            {clientes.map(c => (
+              <div key={c.id} className="table-row grid grid-cols-1 lg:grid-cols-[1.2fr_1fr_1fr_1fr_130px_130px] gap-2 lg:gap-3 px-5 py-3.5 items-center cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#EAB308]/10 flex items-center justify-center text-[#EAB308] font-bold text-xs shrink-0">
+                    {c.nome.charAt(0)}
+                  </div>
+                  <p className="text-sm font-semibold text-white leading-tight">{c.nome}</p>
+                </div>
+                <span className="text-xs text-[#A1A1AA] font-mono hidden lg:block">{c.cnpj}</span>
+                <span className="text-xs text-[#A1A1AA] hidden lg:block truncate">{c.email}</span>
+                <span className="text-xs text-[#A1A1AA] hidden lg:block">{c.tel}</span>
+                <span className="text-xs text-right text-[#A1A1AA]">{c.ultimaVenda}</span>
+                <div className="text-right flex items-center justify-end gap-2">
+                  <span className="text-sm font-bold text-[#22C55E]">{formatMoney(c.total)}</span>
+                  <span className="text-[10px] font-semibold text-[#EAB308] hover:underline cursor-pointer">EXPLORAR</span>
+                </div>
+                {/* labels mobile */}
+                <div className="lg:hidden flex flex-wrap gap-1.5 text-[10px] text-[#A1A1AA] col-span-1">
+                  <span className="font-mono">{c.cnpj}</span>
+                  <span>·</span>
+                  <span>{c.email}</span>
+                </div>
+              </div>
+            ))}
+            {clientes.length === 0 && (
+              <div className="px-5 py-10 text-center text-[#52525B] text-sm">Nenhum cliente encontrado.</div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ───── ABA 2: PRODUTOS & RASTREIO ─────
+  function TabProdutos() {
+    const [busca, setBusca] = useState('');
+    const [expandido, setExpandido] = useState(null);
+
+    const produtos = MOCK_PRODUTOS.filter(p =>
+      p.nome.toLowerCase().includes(busca.toLowerCase()) ||
+      p.cod.toLowerCase().includes(busca.toLowerCase()) ||
+      p.ean.includes(busca) ||
+      p.nfOrigem.includes(busca)
+    );
+
+    const statusLabel = (s) => {
+      switch(s) {
+        case 'disponivel': return {label:'Disponível', cls:'text-[#22C55E] bg-[#22C55E]/10'};
+        case 'baixo_estoque': return {label:'Estoque Baixo', cls:'text-[#EAB308] bg-[#EAB308]/10'};
+        case 'sem_estoque': return {label:'Sem Estoque', cls:'text-[#EF4444] bg-[#EF4444]/10'};
+        default: return {label:s, cls:'text-[#A1A1AA] bg-[#27272A]'};
+      }
+    };
+
+    return (
+      <div className="fade-in space-y-5">
+        <div>
+          <h2 className="text-base font-bold text-white">Produtos & Rastreio</h2>
+          <p className="text-xs text-[#A1A1AA]">Gestão de estoque e rastreabilidade dos itens</p>
+        </div>
+
+        <SearchInput placeholder="Buscar por nome do produto, código de barras/EAN, ou chave da NF..." value={busca} onChange={setBusca} className="w-full" />
+
+        <div className="card overflow-hidden">
+          <div className="hidden lg:grid grid-cols-[1.2fr_100px_110px_100px_90px_100px_130px] gap-3 px-5 py-3 bg-[#09090B] border-b border-[#27272A] text-[11px] font-semibold text-[#A1A1AA] uppercase tracking-wider">
+            <span>Item / Produto</span>
+            <span>Código/EAN</span>
+            <span>NF Origem</span>
+            <span>Entrada</span>
+            <span className="text-right">Qtd</span>
+            <span className="text-right">V. Unit.</span>
+            <span className="text-center">Status</span>
+          </div>
+          <div className="divide-y divide-[#27272A]/60">
+            {produtos.map(p => {
+              const st = statusLabel(p.status);
+              return (
+                <div key={p.id}>
+                  <div onClick={() => setExpandido(expandido === p.id ? null : p.id)}
+                    className={`table-row grid grid-cols-1 lg:grid-cols-[1.2fr_100px_110px_100px_90px_100px_130px] gap-2 lg:gap-3 px-5 py-3 items-center cursor-pointer ${expandido === p.id ? 'selected' : ''}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-[#EAB308]/10 flex items-center justify-center text-[#EAB308] font-bold text-xs shrink-0">
+                        {p.nome.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-white leading-tight">{p.nome}</p>
+                        <p className="text-[10px] text-[#52525B] lg:hidden">{p.cod} · {p.ean}</p>
+                      </div>
+                    </div>
+                    <span className="text-xs text-[#A1A1AA] font-mono hidden lg:block">{p.cod}</span>
+                    <span className="text-xs text-[#A1A1AA] font-mono hidden lg:block">{p.nfOrigem}</span>
+                    <span className="text-xs text-[#A1A1AA] hidden lg:block">{p.data}</span>
+                    <span className="text-right text-sm font-semibold text-white">{p.qtd}</span>
+                    <span className="text-right text-xs text-[#A1A1AA]">R$ {p.vUnit.toFixed(2)}</span>
+                    <div className="flex justify-center">
+                      <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
+                    </div>
+                    <div className="lg:hidden flex items-center justify-between col-span-1 text-[11px] text-[#A1A1AA]">
+                      <span>NF: {p.nfOrigem} · {p.data}</span>
+                      <span className={expandido === p.id ? 'text-[#EAB308]' : ''}>
+                        {expandido === p.id ? Icons.arrowUp : 'Histórico >'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Histórico de movimentação expandido */}
+                  {expandido === p.id && (
+                    <div className="history-panel bg-[#09090B] border-t border-[#27272A] px-5 py-3">
+                      <p className="text-[10px] font-semibold text-[#A1A1AA] uppercase tracking-wider mb-2">Histórico de Movimentação</p>
+                      <div className="flex flex-col gap-1.5">
+                        {p.mov.map((m, i) => (
+                          <div key={i} className="flex items-center gap-4 text-xs">
+                            <span className={`font-semibold ${m.tipo === 'Entrada' ? 'text-[#22C55E]' : 'text-[#EF4444]'}`}>{m.tipo}</span>
+                            <span className="text-[#A1A1AA]">{m.data}</span>
+                            <span className="text-[#A1A1AA] font-mono">NF: {m.nf}</span>
+                            <span className="text-white font-semibold">Qtd: {m.qtd}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {produtos.length === 0 && (
+              <div className="px-5 py-10 text-center text-[#52525B] text-sm">Nenhum produto encontrado.</div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ───── ABA 3: SINCRONIZAÇÃO XML ─────
+  function TabSincronizacao() {
+    const [nfeList, setNfeList] = useState(MOCK_NFES);
+    const [selectedCount, setSelectedCount] = useState(0);
+    const [dragOver, setDragOver] = useState(false);
+
+    const handleSync = (id) => {
+      setNfeList(prev => prev.map(n => n.id === id ? {...n, status:'sincronizado', erro:null} : n));
+    };
+
+    const handleSyncAll = () => {
+      setNfeList(prev => prev.map(n => n.status !== 'sincronizado' ? {...n, status:'sincronizado', erro:null} : n));
+    };
+
+    const pendingCount = nfeList.filter(n => n.status === 'pendente').length;
+    const errorCount = nfeList.filter(n => n.status === 'erro').length;
+
+    const statusBadge = (status) => {
+      switch(status) {
+        case 'sincronizado': return {label:'Sincronizado', cls:'badge-sync', icon:Icons.check};
+        case 'erro': return {label:'Erro', cls:'badge-error', icon:Icons.alert};
+        case 'pendente': return {label:'Pendente', cls:'badge-pending', icon:Icons.alert};
+        default: return {label:status, cls:'badge-pending', icon:null};
+      }
+    };
+
+    return (
+      <div className="fade-in space-y-5">
+        <div>
+          <h2 className="text-base font-bold text-white">Sincronização e Integração XML</h2>
+          <p className="text-xs text-[#A1A1AA]">Importação e processamento de Notas Fiscais eletrônicas</p>
+        </div>
+
+        {/* Dropzone */}
+        <div
+          className={`dropzone p-7 text-center ${dragOver ? 'dragover' : ''}`}
+          onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={e => { e.preventDefault(); setDragOver(false); alert('Arquivos recebidos para processamento.'); }}
+          onClick={() => alert('Selecione os arquivos XML/PDF.')}
+        >
+          <div className="w-12 h-12 rounded-xl bg-[#09090B] border border-[#27272A] flex items-center justify-center mx-auto mb-3 text-[#EAB308]">
+            {Icons.upload}
+          </div>
+          <p className="text-sm font-semibold text-white mb-1">Carregar XMLs/PDFs de Nota Fiscal</p>
+          <p className="text-xs text-[#A1A1AA]">Você pode selecionar várias notas de uma vez (Bulk Import)</p>
+          {/* Aviso de duplicidade */}
+          <div className="flex items-center justify-center gap-1.5 mt-4 text-[10px] text-[#A1A1AA] bg-[#09090B] rounded-lg px-3 py-2 border border-[#27272A] max-w-md mx-auto">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EAB308" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span>Sistema previne automaticamente a importação de NFs com a mesma chave de acesso já processada</span>
+          </div>
+        </div>
+
+        {/* Status + Tabela */}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3 text-xs">
+            <span className="text-[#A1A1AA]">
+              <span className="text-white font-semibold">{nfeList.length}</span> notas
+            </span>
+            <span className="badge-sync text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
+              {nfeList.filter(n => n.status === 'sincronizado').length} sincronizadas
+            </span>
+            {pendingCount > 0 && (
+              <span className="badge-pending text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
+                {pendingCount} pendentes
+              </span>
+            )}
+            {errorCount > 0 && (
+              <span className="badge-error text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
+                {errorCount} com erro
+              </span>
+            )}
+          </div>
+          <button onClick={handleSyncAll} className="btn-primary flex items-center gap-1.5 text-xs h-8 px-4 rounded-lg">
+            {Icons.sync} Sincronizar Todas
+          </button>
+        </div>
+
+        {/* Tabela de NFs */}
+        <div className="card overflow-hidden">
+          <div className="hidden lg:grid grid-cols-[1fr_1fr_100px_120px_1fr_80px] gap-3 px-5 py-3 bg-[#09090B] border-b border-[#27272A] text-[11px] font-semibold text-[#A1A1AA] uppercase tracking-wider">
+            <span>Chave da NF / Número</span>
+            <span>Emissor</span>
+            <span>Data</span>
+            <span>Status</span>
+            <span>Erros / Observações</span>
+            <span className="text-center">Ações</span>
+          </div>
+          <div className="divide-y divide-[#27272A]/60">
+            {nfeList.map(nfe => {
+              const sb = statusBadge(nfe.status);
+              return (
+                <div key={nfe.id} className="table-row grid grid-cols-1 lg:grid-cols-[1fr_1fr_100px_120px_1fr_80px] gap-2 lg:gap-3 px-5 py-3.5 items-center">
+                  {/* Chave + número */}
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-white truncate">{nfe.numero}</p>
+                    <p className="text-[9px] text-[#52525B] font-mono truncate">{nfe.chave}</p>
+                    <p className="text-[10px] text-[#52525B] font-mono lg:hidden mt-0.5">{nfe.emissor} · {nfe.data}</p>
+                  </div>
+                  {/* Emissor */}
+                  <span className="text-xs text-[#A1A1AA] hidden lg:block">{nfe.emissor}</span>
+                  {/* Data */}
+                  <span className="text-xs text-[#A1A1AA] hidden lg:block">{nfe.data}</span>
+                  {/* Status badge */}
+                  <div className="hidden lg:flex">
+                    <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1 ${sb.cls}`}>
+                      {sb.icon} {sb.label}
+                    </span>
+                  </div>
+                  {/* Erro / Observação */}
+                  <div className="hidden lg:block text-xs text-[#EF4444]">{nfe.erro || <span className="text-[#A1A1AA]">—</span>}</div>
+                  {/* Ações */}
+                  <div className="flex items-center justify-center gap-1">
+                    {(nfe.status === 'pendente' || nfe.status === 'erro') ? (
+                      <button onClick={() => handleSync(nfe.id)}
+                        className="btn-primary flex items-center gap-1 text-[10px] h-7 px-3 rounded-lg">
+                        {Icons.sync} <span className="hidden sm:inline">Sincronizar</span>
+                      </button>
+                    ) : (
+                      <span className="text-[10px] text-[#22C55E] font-semibold flex items-center gap-1">
+                        {Icons.check} Sucesso
+                      </span>
+                    )}
+                    <button className="w-7 h-7 rounded-lg hover:bg-[#27272A] flex items-center justify-center text-[#A1A1AA]">{Icons.eye}</button>
+                  </div>
+                  {/* Status + erro no mobile */}
+                  <div className="lg:hidden flex items-center gap-2 col-span-1">
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${sb.cls}`}>{sb.label}</span>
+                    {nfe.erro && <span className="text-[10px] text-[#EF4444] truncate">{nfe.erro}</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ───── APP ─────
+  function App() {
+    const [activeTab, setActiveTab] = useState('clientes');
+
+    const tabs = [
+      { id:'clientes', label:'Clientes', icon:(<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>) },
+      { id:'produtos', label:'Produtos & Rastreio', icon:(<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>) },
+      { id:'sincronizacao', label:'Sincronização XML', icon:(<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>) },
+    ];
+
+    return (
+      <div className="min-h-screen bg-[#09090B]">
+        <TopBar />
+        <div className="max-w-[1440px] mx-auto px-4 lg:px-8 py-5 lg:py-6">
+          <TabBar tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
+          <div className="mt-6">
+            {activeTab === 'clientes' && <TabClientes />}
+            {activeTab === 'produtos' && <TabProdutos />}
+            {activeTab === 'sincronizacao' && <TabSincronizacao />}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+
+</body>
+</html>

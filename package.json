@@ -1,0 +1,41 @@
+{
+  "name": "sigeq-energiza",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "SIGEQ-Energiza - CRM + Sistema de Gestao Operacional e Qualidade",
+  "scripts": {
+    "dev": "node dev-server.cjs",
+    "dev:demo": "powershell -NoProfile -Command \"Start-Process 'http://localhost:3000/?demo=true'; node dev-server.cjs\"",
+    "build": "echo 'Vanilla JS — no build step required'",
+    "lint": "eslint . --ext .js,.ts",
+    "lint:fix": "eslint . --ext .js,.ts --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "prepare": "echo 'Dev environment ready'"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@playwright/test": "^1.48.0",
+    "@testing-library/jest-dom": "^6.6.0",
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0",
+    "jsdom": "^30.0.1",
+    "prettier": "^3.4.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

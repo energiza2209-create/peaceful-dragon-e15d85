@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFe Center — Gestão de Notas Fiscais</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #F8FAFC; color: #0F172A; }
+    .drop-zone { border: 2px dashed #0047AB; background: #EEF4FF; border-radius: 16px; transition: all .2s ease; cursor: pointer; }
+    .drop-zone:hover, .drop-zone.dragover { background: #D6E4FF; border-color: #003399; }
+    .processed-card { transition: all .15s ease; }
+    .processed-card:hover { background: #F8FAFC; }
+    .explore-link { transition: all .15s ease; }
+    .explore-link:hover { gap: 10px !important; }
+    .tab-btn { transition: all .15s ease; }
+    .pagination-btn { transition: all .15s ease; }
+    .pagination-btn:hover:not(.active) { background: #E2E8F0; }
+    /* scrollbar fina */
+    .scroll-thin::-webkit-scrollbar { width: 5px; }
+    .scroll-thin::-webkit-scrollbar-track { background: transparent; }
+    .scroll-thin::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
+    /* animação de entrada */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-up { animation: fadeUp .35s ease forwards; opacity: 0; }
+    .animate-fade-up:nth-child(1) { animation-delay: .05s; }
+    .animate-fade-up:nth-child(2) { animation-delay: .1s; }
+    .animate-fade-up:nth-child(3) { animation-delay: .15s; }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       TOPBAR
+       ============================================================ -->
+  <header class="h-16 bg-white border-b border-slate-200 flex items-center px-6 lg:px-10 sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-[#0047AB] flex items-center justify-center text-white font-extrabold text-sm">N</div>
+      <div>
+        <h1 class="text-sm font-bold text-slate-900 leading-tight">NFe Center</h1>
+        <p class="text-[11px] text-slate-400 leading-tight">Gestão de Notas Fiscais</p>
+      </div>
+    </div>
+    <div class="ml-auto flex items-center gap-4">
+      <div class="hidden sm:flex items-center gap-1.5 text-xs text-slate-400">
+        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span>Sistema conectado</span>
+      </div>
+      <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-500">AD</div>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       CONTEÚDO PRINCIPAL — 2 COLUNAS
+       ============================================================ -->
+  <main class="max-w-[1440px] mx-auto px-4 lg:px-8 py-6 lg:py-8">
+
+    <!-- Breadcrumb / título da página -->
+    <div class="flex items-center gap-2 text-sm text-slate-400 mb-6">
+      <span class="text-slate-900 font-semibold">Importação de NFe</span>
+      <span>/</span>
+      <span>Notas de Venda</span>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-[400px_1fr] gap-6 lg:gap-8">
+
+      <!-- ============================================================
+           COLUNA ESQUERDA — Central de Importação
+           ============================================================ -->
+      <div class="space-y-5">
+
+        <!-- Seção: IMPORTAR NF DE VENDA -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/70 p-5">
+          <div class="flex items-center gap-2.5 mb-4">
+            <div class="w-7 h-7 rounded-lg bg-[#EEF4FF] flex items-center justify-center text-[#0047AB]">↑</div>
+            <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide">Importar NF de Venda</h2>
+          </div>
+
+          <!-- Dropzone -->
+          <div class="drop-zone p-8 text-center" id="dropzone">
+            <div class="w-12 h-12 rounded-xl bg-white shadow-sm border border-slate-200 flex items-center justify-center mx-auto mb-3 text-[#0047AB]">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <p class="text-sm font-semibold text-slate-800 mb-1">Carregar XMLs/PDFs de Produto</p>
+            <p class="text-xs text-slate-400">Você pode selecionar várias notas de uma vez (Bulk Import)</p>
+            <input type="file" id="nfeUpload" accept=".xml,.pdf" multiple class="hidden" />
+          </div>
+        </section>
+
+        <!-- Seção: PENDENTE -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/70 p-5">
+          <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Pendente (0)</h3>
+          <div class="flex flex-col items-center justify-center py-8 text-slate-300">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+            <p class="text-sm">Nenhuma nota pendente</p>
+          </div>
+        </section>
+
+        <!-- Seção: PROCESSADOS -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/70 p-5">
+          <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Processados (3)</h3>
+          <div class="space-y-2 max-h-[280px] overflow-y-auto pr-1 scroll-thin">
+
+            <!-- Cartão 1 -->
+            <div class="processed-card flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-white">
+              <div class="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500 shrink-0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-slate-800 truncate">nfe_452301_serie_1.xml</p>
+                <p class="text-xs text-slate-400 truncate">Hospital Santa Casa de Misericórdia</p>
+              </div>
+              <div class="flex items-center gap-1">
+                <button class="w-7 h-7 rounded-lg hover:bg-[#EEF4FF] flex items-center justify-center text-[#0047AB] transition-colors" title="Informações">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                </button>
+                <button class="w-7 h-7 rounded-lg hover:bg-[#EEF4FF] flex items-center justify-center text-[#0047AB] transition-colors" title="Visualizar">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Cartão 2 -->
+            <div class="processed-card flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-white">
+              <div class="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500 shrink-0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-slate-800 truncate">NF_452302_serie_2.xml</p>
+                <p class="text-xs text-slate-400 truncate">Laboratório São Marcos Ltda</p>
+              </div>
+              <div class="flex items-center gap-1">
+                <button class="w-7 h-7 rounded-lg hover:bg-[#EEF4FF] flex items-center justify-center text-[#0047AB] transition-colors" title="Informações">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                </button>
+                <button class="w-7 h-7 rounded-lg hover:bg-[#EEF4FF] flex items-center justify-center text-[#0047AB] transition-colors" title="Visualizar">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Cartão 3 -->
+            <div class="processed-card flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-white">
+              <div class="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500 shrink-0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-slate-800 truncate">xml_452303_serie_3.xml</p>
+                <p class="text-xs text-slate-400 truncate">Clínica Vida Plena S/S Ltda</p>
+              </div>
+              <div class="flex items-center gap-1">
+                <button class="w-7 h-7 rounded-lg hover:bg-[#EEF4FF] flex items-center justify-center text-[#0047AB] transition-colors" title="Informações">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                </button>
+                <button class="w-7 h-7 rounded-lg hover:bg-[#EEF4FF] flex items-center justify-center text-[#0047AB] transition-colors" title="Visualizar">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </section>
+      </div>
+
+      <!-- ============================================================
+           COLUNA DIREITA — Histórico e Explorador de Dados
+           ============================================================ -->
+      <div class="space-y-5">
+
+        <!-- Cabeçalho do Histórico -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/70 p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 shrink-0 mt-0.5">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div>
+                <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide">Histórico de Arquivos Processados</h2>
+                <p class="text-xs text-slate-400 mt-0.5">Lista de notas fiscais de venda que já foram processadas pela IA e sincronizadas.</p>
+              </div>
+            </div>
+            <span class="text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1 rounded-full whitespace-nowrap">24 notas</span>
+          </div>
+        </section>
+
+        <!-- Filtro + Busca -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div class="relative flex-1 w-full">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Buscar por nome, CNPJ..." class="w-full h-10 pl-10 pr-4 rounded-xl bg-white border border-slate-200 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0047AB]/20 focus:border-[#0047AB] transition-all" />
+          </div>
+          <div class="flex gap-1.5 bg-white rounded-xl border border-slate-200 p-1">
+            <button class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#0047AB] text-white">Itens</button>
+            <button class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800">Clientes</button>
+          </div>
+        </div>
+
+        <!-- Tabela / Lista de Dados -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden">
+
+          <!-- HEADER da tabela (oculto em mobile) -->
+          <div class="hidden lg:grid grid-cols-[1fr_1fr_140px_120px_100px_80px] gap-3 px-5 py-3 bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <span>Produto / Cliente</span>
+            <span>Código / CNPJ</span>
+            <span>NF</span>
+            <span>Data</span>
+            <span class="text-right">Valor</span>
+            <span class="text-right">Qtd</span>
+          </div>
+
+          <!-- Linhas de dados -->
+          <div class="divide-y divide-slate-100">
+
+            <!-- Linha 1 - Produto -->
+            <div class="grid grid-cols-1 lg:grid-cols-[1fr_1fr_140px_120px_100px_80px] gap-2 lg:gap-3 px-5 py-4 hover:bg-slate-50 transition-colors items-center animate-fade-up">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-[#EEF4FF] flex items-center justify-center text-[#0047AB] font-bold text-xs shrink-0">M</div>
+                <div>
+                  <p class="text-sm font-semibold text-slate-800 leading-tight">Monitor Multiparâmetro</p>
+                  <p class="text-xs text-slate-400 lg:hidden">Cód: MON-001 · NF 452301 · 15/03/2025</p>
+                </div>
+              </div>
+              <div class="hidden lg:block text-sm text-slate-500 font-mono">MON-001</div>
+              <div class="hidden lg:block text-sm text-slate-600 font-mono">452301-1</div>
+              <div class="hidden lg:block text-sm text-slate-500">15/03/2025</div>
+              <div class="text-right text-sm font-bold text-emerald-600 lg:text-center">R$ 850,00</div>
+              <div class="text-right text-sm text-slate-500 lg:text-center">4</div>
+            </div>
+
+            <!-- Linha 2 - Produto -->
+            <div class="grid grid-cols-1 lg:grid-cols-[1fr_1fr_140px_120px_100px_80px] gap-2 lg:gap-3 px-5 py-4 hover:bg-slate-50 transition-colors items-center animate-fade-up">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-[#EEF4FF] flex items-center justify-center text-[#0047AB] font-bold text-xs shrink-0">B</div>
+                <div>
+                  <p class="text-sm font-semibold text-slate-800 leading-tight">Bomba de Infusão</p>
+                  <p class="text-xs text-slate-400 lg:hidden">Cód: BOM-005 · NF 452302 · 14/03/2025</p>
+                </div>
+              </div>
+              <div class="hidden lg:block text-sm text-slate-500 font-mono">BOM-005</div>
+              <div class="hidden lg:block text-sm text-slate-600 font-mono">452302-1</div>
+              <div class="hidden lg:block text-sm text-slate-500">14/03/2025</div>
+              <div class="text-right text-sm font-bold text-emerald-600 lg:text-center">R$ 1.360,00</div>
+              <div class="text-right text-sm text-slate-500 lg:text-center">2</div>
+            </div>
+
+            <!-- Linha 3 - Produto -->
+            <div class="grid grid-cols-1 lg:grid-cols-[1fr_1fr_140px_120px_100px_80px] gap-2 lg:gap-3 px-5 py-4 hover:bg-slate-50 transition-colors items-center animate-fade-up">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-[#EEF4FF] flex items-center justify-center text-[#0047AB] font-bold text-xs shrink-0">S</div>
+                <div>
+                  <p class="text-sm font-semibold text-slate-800 leading-tight">Sensor SPO2 Adulto</p>
+                  <p class="text-xs text-slate-400 lg:hidden">Cód: SPO-003 · NF 452303 · 12/03/2025</p>
+                </div>
+              </div>
+              <div class="hidden lg:block text-sm text-slate-500 font-mono">SPO-003</div>
+              <div class="hidden lg:block text-sm text-slate-600 font-mono">452303-1</div>
+              <div class="hidden lg:block text-sm text-slate-500">12/03/2025</div>
+              <div class="text-right text-sm font-bold text-emerald-600 lg:text-center">R$ 320,00</div>
+              <div class="text-right text-sm text-slate-500 lg:text-center">10</div>
+            </div>
+
+            <!-- Cliente (modo diferente — ocupa largura total) -->
+            <div class="px-5 py-4 hover:bg-slate-50 transition-colors animate-fade-up bg-slate-50/50 border-t-2 border-[#0047AB]/10">
+              <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="w-10 h-10 rounded-xl bg-[#0047AB]/10 flex items-center justify-center text-[#0047AB] font-bold text-sm shrink-0">H</div>
+                  <div class="min-w-0">
+                    <p class="text-sm font-bold text-slate-800 truncate">Hospital Santa Casa de Misericórdia</p>
+                    <p class="text-xs text-slate-400 truncate">CNPJ 12.345.678/0001-90</p>
+                  </div>
+                </div>
+                <div class="text-right shrink-0">
+                  <p class="text-xs text-slate-400 uppercase text-[11px]">Total comprado</p>
+                  <p class="text-base font-extrabold text-emerald-600">R$ 12.430,00</p>
+                </div>
+                <a href="#" class="explore-link flex items-center gap-1.5 text-xs font-bold text-[#0047AB] uppercase tracking-wider shrink-0 ml-2">
+                  Explorar
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </a>
+              </div>
+            </div>
+
+            <!-- Linha 4 - Produto -->
+            <div class="grid grid-cols-1 lg:grid-cols-[1fr_1fr_140px_120px_100px_80px] gap-2 lg:gap-3 px-5 py-4 hover:bg-slate-50 transition-colors items-center animate-fade-up">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-[#EEF4FF] flex items-center justify-center text-[#0047AB] font-bold text-xs shrink-0">C</div>
+                <div>
+                  <p class="text-sm font-semibold text-slate-800 leading-tight">Calibração de Autoclave</p>
+                  <p class="text-xs text-slate-400 lg:hidden">Cód: CAL-002 · NF 452301 · 15/03/2025</p>
+                </div>
+              </div>
+              <div class="hidden lg:block text-sm text-slate-500 font-mono">CAL-002</div>
+              <div class="hidden lg:block text-sm text-slate-600 font-mono">452301-1</div>
+              <div class="hidden lg:block text-sm text-slate-500">15/03/2025</div>
+              <div class="text-right text-sm font-bold text-emerald-600 lg:text-center">R$ 1.450,00</div>
+              <div class="text-right text-sm text-slate-500 lg:text-center">1</div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Paginação -->
+        <div class="flex items-center justify-between gap-4">
+          <p class="text-xs text-slate-400">Exibindo 1–5 de 24 notas</p>
+          <div class="flex items-center gap-1">
+            <button class="pagination-btn h-8 w-8 rounded-lg text-xs font-semibold text-slate-400 flex items-center justify-center" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <button class="pagination-btn h-8 w-8 rounded-lg text-xs font-semibold bg-[#0047AB] text-white flex items-center justify-center">1</button>
+            <button class="pagination-btn h-8 w-8 rounded-lg text-xs font-semibold text-slate-500 flex items-center justify-center">2</button>
+            <button class="pagination-btn h-8 w-8 rounded-lg text-xs font-semibold text-slate-500 flex items-center justify-center">3</button>
+            <button class="pagination-btn h-8 w-8 rounded-lg text-xs font-semibold text-slate-500 flex items-center justify-center">4</button>
+            <button class="pagination-btn h-8 w-8 rounded-lg text-xs font-semibold text-slate-500 flex items-center justify-center">5</button>
+            <button class="pagination-btn h-8 w-8 rounded-lg text-xs font-semibold text-slate-500 flex items-center justify-center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    lucide.createIcons();
+
+    // Dropzone interativo
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('nfeUpload');
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        fileInput.dispatchEvent(new Event('change'));
+      }
+    });
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length) alert(fileInput.files.length + ' arquivo(s) selecionado(s) para processamento.');
+    });
+
+    // Tabs Itens / Clientes
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => {
+          b.classList.remove('bg-[#0047AB]', 'text-white');
+          b.classList.add('text-slate-500');
+        });
+        btn.classList.add('bg-[#0047AB]', 'text-white');
+        btn.classList.remove('text-slate-500');
+      });
+    });
+  </script>
+
+</body>
+</html>

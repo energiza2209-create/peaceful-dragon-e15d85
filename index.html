@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CRM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script>
+    /* Aplica o tema salvo ANTES da pintura, para não haver flash de tema errado */
+    document.documentElement.setAttribute('data-theme', 'dark');
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" defer integrity="sha384-fCAW/rDWORTbQXSiB7mOg0QtQ5c+r0f544y6XoKjuVva0nMBlCpNUjiFeG5iMdS3" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer crossorigin="anonymous"></script>
+  <script src="supabase-config.js" defer></script>
+  <script src="shared/logger.js" defer></script>
+  <script src="shared/error-boundary.js" defer></script>
+  <script src="shared/audit.js" defer></script>
+  <script src="shared/auth.js" defer></script>
+</head>
+<body>
+  <div class="app">
+    <!-- MAIN -->
+    <main class="main">
+      <header class="topbar">
+        <button class="menu-toggle" id="menuToggle" aria-label="Menu">
+          <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
+        <div class="brand">
+          <div class="brand-logo">S</div>
+          <div class="brand-text">
+<strong>CRM</strong>
+             <span>Gestão de Relacionamento</strong>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div class="topbar-actions">
+            <button class="btn btn-primary btn-liquid" id="newProposalBtn">+ Nova Proposta</button>
+          </div>
+
+          <div class="user-chip" id="userChip">
+            <button class="user-chip-btn" id="userChipBtn" aria-haspopup="true" aria-expanded="false">
+              <span class="user-avatar">EC</span>
+              <span class="user-meta">
+                <strong>Eng. Clínica</strong>
+                <span>Administrador</span>
+              </span>
+              <svg class="user-caret" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="user-menu" id="userMenu">
+              <button id="userLogout">
+                <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                <span>Sair</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <nav class="horizontal-nav" id="horizontalNav">
+        <div class="nav-group">
+          <span class="nav-group-label">Vendas</span>
+          <button class="value nav-item active" data-view="dashboard" title="Dashboard">
+            <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+            <span>Dashboard</span>
+          </button>
+          <button class="value nav-item" data-view="funil" title="Funil de Vendas">
+            <svg viewBox="0 0 24 24"><path d="M3 3h18v2.5L14 12v7l-4 2v-9L3 5.5V3z"/></svg>
+            <span>Funil</span>
+          </button>
+          <button class="value nav-item" data-view="clientes" title="Cadastro de Clientes">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Clientes</span>
+          </button>
+          <button class="value nav-item" data-view="gerador" title="Gerar Proposta">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+            <span>Proposta</span>
+          </button>
+          <button class="value nav-item" data-view="produtos" title="Catálogo">
+            <svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            <span>Catálogo</span>
+          </button>
+          <button class="value nav-item" data-view="relatorios" title="Relatórios">
+            <svg viewBox="0 0 24 24"><path d="M5 9.2h3V19H5V9.2zM10.6 5h3v14h-3V5zm5.6 8H19v6h-3v-6z"/></svg>
+            <span>Relatórios</span>
+          </button>
+          <button class="value nav-item" data-view="parceiros" title="Parceiros">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM23 21v-2a4 4 0 0 0-3-3.87M16 3a4 4 0 0 0 0 8"/></svg>
+            <span>Parceiros</span>
+          </button>
+        </div>
+
+        <div class="nav-divider"></div>
+
+        <div class="nav-group">
+          <span class="nav-group-label">Operacional</span>
+        </div>
+      </nav>
+
+      <div class="view-header">
+        <div>
+          <h1 id="viewTitle">Dashboard Gerencial</h1>
+          <p id="viewSubtitle">Visão geral do desempenho comercial</p>
+        </div>
+      </div>
+
+      <div class="content">
+        <!-- ================= LOGIN ================= -->
+        <section class="view active" id="view-login"></section>
+
+        <!-- ================= DASHBOARD ================= -->
+        <section class="view active" id="view-dashboard">
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+              <div class="kpi-body">
+                <span class="kpi-label">Faturamento Mensal</span>
+                <strong class="kpi-value" id="kpiFaturamento">—</strong>
+                <span class="kpi-trend" id="kpiFaturamentoTrend"></span>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></div>
+              <div class="kpi-body">
+                <span class="kpi-label">Propostas Ativas</span>
+                <strong class="kpi-value" id="kpiAtivas">—</strong>
+                <span class="kpi-trend" id="kpiAtivasQtd"></span>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
+              <div class="kpi-body">
+                <span class="kpi-label">Taxa de Conversão</span>
+                <strong class="kpi-value" id="kpiConversao">—</strong>
+                <span class="kpi-trend" id="kpiConversaoDet"></span>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div>
+              <div class="kpi-body">
+                <span class="kpi-label">Ticket Médio</span>
+                <strong class="kpi-value" id="kpiTicket">—</strong>
+                <span class="kpi-trend" id="kpiTicketDet"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="charts-grid">
+            <div class="card chart-card">
+              <div class="card-head">
+                <h2>Evolução de Vendas</h2>
+                <span class="card-sub">Faturamento acumulado — mês atual vs. anterior</span>
+              </div>
+              <div class="chart-wrap"><canvas id="chartVendas"></canvas></div>
+            </div>
+            <div class="card chart-card">
+              <div class="card-head">
+                <h2>Segmentação por Categoria</h2>
+                <span class="card-sub">Distribuição das vendas ganhas</span>
+              </div>
+              <div class="chart-wrap"><canvas id="chartCategoria"></canvas></div>
+              <ul class="chart-legend" id="chartCategoriaLegend"></ul>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h2>Últimas Atividades</h2>
+              <span class="card-sub">Cotações que mudaram de status recentemente</span>
+            </div>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr><th>Proposta</th><th>Cliente / Hospital</th><th>Equipamento</th><th>Valor</th><th>Status</th></tr>
+                </thead>
+                <tbody id="atividadesBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= FUNIL / KANBAN ================= -->
+        <section class="view" id="view-funil">
+          <div class="kanban-wrap">
+            <div class="funil-toolbar">
+              <div class="search-bar" style="max-width:400px">
+                <input type="text" id="funilBusca" placeholder="Buscar por cotação, cliente ou item...">
+              </div>
+            </div>
+            <div class="kanban" id="kanban"></div>
+          </div>
+        </section>
+
+        <!-- ================= CLIENTES (cadastro com CNPJ) ================= -->
+        <section class="view" id="view-clientes">
+          <div class="card">
+            <div class="card-head">
+              <h2>Cadastro de Clientes</h2>
+              <form class="search-bar" role="search" onsubmit="return false">
+                <input type="text" id="cliBusca" placeholder="Buscar por nome, CNPJ, comprador, cidade..." />
+              </form>
+              <button class="btn btn-primary" id="cliAddBtn">+ Novo Cliente (CNPJ)</button>
+            </div>
+            <div class="table-wrap">
+              <table class="table">
+                <colgroup>
+                  <col style="width:26%"><col style="width:16%"><col style="width:16%"><col style="width:14%"><col style="width:14%"><col style="width:14%">
+                </colgroup>
+                <thead>
+                  <tr><th>Cliente</th><th>CNPJ</th><th>Comprador</th><th>Telefone</th><th>E-mail</th><th>Ações</th></tr>
+                </thead>
+                <tbody id="clientesBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= GERADOR ================= -->
+        <section class="view" id="view-gerador">
+          <div class="generator-grid">
+            <div class="card">
+              <div class="card-head"><h2>Dados da Proposta</h2></div>
+              <div class="form-grid">
+                <label class="field">
+                  <span>Cliente Cadastrado *</span>
+                  <select id="gpCliente"><option value="">— Selecione um cliente —</option></select>
+                </label>
+                <label class="field">
+                  <span>Nº da Cotação (Portal do Cliente)</span>
+                  <input type="text" id="gpCotacaoNum" placeholder="Nº gerado no portal do cliente" />
+                </label>
+                <label class="field">
+                  <span>Contato / Responsável</span>
+                  <input type="text" id="gpContato" placeholder="Ex: Dra. Marina Alves" />
+                </label>
+                <label class="field">
+                  <span>Validade da Proposta</span>
+                  <input type="text" id="gpValidade" value="15 dias" />
+                </label>
+                <label class="field">
+                  <span>Prazo de Entrega</span>
+                  <input type="text" id="gpPrazo" value="30 dias úteis" />
+                </label>
+                <label class="field">
+                  <span>Forma de Pagamento</span>
+                  <input type="text" id="gpPagamento" value="30/60 dias — Boleto Bancário" />
+                </label>
+                <label class="field">
+                  <span>Categoria</span>
+                  <select id="gpCategoria"></select>
+                </label>
+              </div>
+
+              <div class="card-head" style="margin-top:8px;"><h2>Adicionar Itens</h2></div>
+              <div class="item-adder">
+                <label class="field field-search">
+                  <span>Buscar produto/serviço (autopreenchimento)</span>
+                  <input type="text" id="gpBusca" list="produtosList" placeholder="Digite ou selecione..." autocomplete="off" />
+                  <datalist id="produtosList"></datalist>
+                </label>
+                <label class="field field-qty">
+                  <span>Qtd.</span>
+                  <input type="number" id="gpQtd" value="1" min="1" />
+                </label>
+                <button class="btn btn-primary" id="gpAddItem">Adicionar</button>
+              </div>
+
+              <div class="preview-selected" id="gpSelectedPreview"></div>
+
+              <div class="table-wrap" style="margin-top:16px;">
+                <table class="table">
+                  <thead>
+                    <tr><th>Item</th><th>Descrição</th><th>Qtd</th><th>Unit.</th><th>Total</th><th></th></tr>
+                  </thead>
+                  <tbody id="gpItensBody"><tr class="empty-row"><td colspan="6">Nenhum item adicionado.</td></tr></tbody>
+                  <tfoot>
+                    <tr><td colspan="4"></td><td class="grand-total-label">TOTAL</td><td id="gpTotal" class="grand-total">R$ 0,00</td></tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            <div class="card generator-side">
+              <div class="card-head"><h2>Foto do Item</h2></div>
+              <div class="photo-box" id="gpPhotoBox">
+                <img id="gpPhotoPreview" alt="Pré-visualização" />
+                <span id="gpPhotoPlaceholder">Selecione um produto ou faça upload</span>
+              </div>
+              <label class="btn btn-ghost btn-block">
+                Upload manual de foto
+                <input type="file" id="gpPhotoUpload" accept="image/*" hidden />
+              </label>
+
+              <div class="card-head" style="margin-top:18px;"><h2>Ações</h2></div>
+              <button class="btn btn-primary btn-block" id="gpGerarPdf"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>Exportar PDF Timbrado</button>
+              <button class="btn btn-outline btn-block" id="gpSalvarFunil">Salvar no Funil (Aberto)</button>
+              <button class="btn btn-ghost btn-block" id="gpLimpar">Limpar formulário</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= CATÁLOGO ================= -->
+        <section class="view" id="view-produtos">
+          <div class="card">
+            <div class="card-head">
+              <h2>Cadastro de Produtos / Serviços</h2>
+              <form class="search-bar" id="prodSearchForm" role="search" onsubmit="return false">
+                <input id="prodBusca" type="search" name="q" placeholder="Buscar produto por nome..." pattern=".*\S.*" required />
+                <button class="search-btn" type="submit" aria-label="Buscar"><span>Buscar</span></button>
+              </form>
+              <button class="btn btn-primary" id="prodAddBtn">+ Novo Produto</button>
+            </div>
+            <div class="table-wrap">
+              <table class="table">
+                <colgroup>
+                  <col class="c-prod"><col class="c-cat"><col class="c-venda"><col class="c-custo"><col class="c-forn"><col class="c-acoes">
+                </colgroup>
+                <thead>
+                  <tr><th>Produto/Serviço</th><th>Categoria</th><th>Preço Venda</th><th>Custo</th><th>Fornecedor</th><th></th></tr>
+                </thead>
+                <tbody id="produtosBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= RELATÓRIOS ================= -->
+        <section class="view" id="view-relatorios">
+          <div class="card">
+            <div class="card-head"><h2>Filtros</h2></div>
+            <div class="filters">
+              <label class="field">
+                <span>Período</span>
+                <select id="repPeriodo">
+                  <option value="atual">Mês atual</option>
+                  <option value="anterior">Mês anterior</option>
+                  <option value="custom">Personalizado</option>
+                </select>
+              </label>
+              <label class="field" id="repFromWrap" style="display:none;">
+                <span>De</span><input type="date" id="repFrom" />
+              </label>
+              <label class="field" id="repToWrap" style="display:none;">
+                <span>Até</span><input type="date" id="repTo" />
+              </label>
+              <label class="field">
+                <span>Hospital / Cliente</span>
+                <select id="repCliente"><option value="">Todos</option></select>
+              </label>
+              <button class="btn btn-outline" id="repAplicar">Aplicar filtros</button>
+              <button class="btn btn-primary" id="repFinanceiro"><svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>Enviar para o Financeiro</button>
+              <button class="btn btn-ghost" id="repBackup"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Importar / Exportar Backup</button>
+            </div>
+          </div>
+
+          <div class="kpi-grid kpi-grid-3">
+            <div class="kpi-card"><div class="kpi-body"><span class="kpi-label">Total Aprovado</span><strong class="kpi-value" id="repTotalAprovado">—</strong></div></div>
+            <div class="kpi-card"><div class="kpi-body"><span class="kpi-label">Propostas Ganhas</span><strong class="kpi-value" id="repQtdGanhas">—</strong></div></div>
+            <div class="kpi-card"><div class="kpi-body"><span class="kpi-label">Ticket Médio</span><strong class="kpi-value" id="repTicket">—</strong></div></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>Desempenho de Vendas Consolidado</h2></div>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr><th>Proposta</th><th>Cliente</th><th>Categoria</th><th>Data</th><th>Status</th><th>Valor</th></tr>
+                </thead>
+                <tbody id="repBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= PARCEIROS ================= -->
+        <section class="view" id="view-parceiros">
+          <!-- Cabeçalho com título -->
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+            <div>
+              <h2 style="font-size:var(--font-lg);font-weight:600;color:var(--text-primary)">Parceiros &amp; Rastreio</h2>
+              <p style="font-size:var(--font-xs);color:var(--text-muted);margin-top:2px">Clientes, fornecedores, produtos e sincronização de NF-e</p>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="resetPartnersBtn" style="color:var(--text-muted);border-color:rgba(255,230,0,.15)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Zerar Dados
+            </button>
+          </div>
+
+          <!-- Abas principais -->
+          <div class="tab-bar" id="parceirosTabs" style="margin-bottom:16px">
+            <button class="tab active" data-tab="clientes">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Clientes
+            </button>
+            <button class="tab" data-tab="produtos">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              Produtos &amp; Rastreio
+            </button>
+            <button class="tab" data-tab="sincronizacao">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Sincronização XML
+            </button>
+          </div>
+
+          <!-- Container onde os 3 módulos renderizam -->
+          <div id="parceirosContent"></div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL genérico -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modalBox">
+      <div class="modal-head"><h3 id="modalTitle">Título</h3><button class="modal-close" id="modalClose">✕</button></div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="data.js" defer></script>
+  <script src="app.js" defer></script>
+  <script src="shared/qdb.js" defer></script>
+  <script src="views/login.js" defer></script>
+  <script src="views/dashboard.js" defer></script>
+  <script src="views/funil.js" defer></script>
+  <script src="views/clientes.js" defer></script>
+  <script src="views/gerador.js" defer></script>
+  <script src="views/catalogo.js" defer></script>
+  <script src="views/relatorios.js" defer></script>
+  <script src="views/parceiros.js" defer></script>
+</body>
+</html>

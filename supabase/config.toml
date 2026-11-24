@@ -1,0 +1,4 @@
+﻿project_id = "fhjihlndqfzzcqwoijmj"
+
+[functions.auvo-sync]
+verify_jwt = false
